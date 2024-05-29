@@ -4,6 +4,7 @@ import logging
 import sys
 import zipfile
 import glob
+import uuid
 from decouple import config
 from PyPDF2 import PdfReader, PdfWriter
 from aiogram import Bot, Dispatcher, html, F
@@ -14,8 +15,7 @@ from aiogram.types import Message, FSInputFile
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 # Your Telegram bot token
-# TOKEN = config('TOKEN')
-TOKEN = '7044772898:AAHrGf1DCw1VpRvRtVguhht4L3t_LDWPfqI'
+TOKEN = config('TOKEN')
 
 # All handlers should be attached to the Router (or Dispatcher)
 bot = Bot(token=TOKEN, default=DefaultBotProperties(
@@ -62,19 +62,24 @@ async def crop_and_merge(input_files):
                 writer.add_page(page=cropped_page)
 
     # write to output pdf file:
-    output_path = '/data/results/result.pdf'
+    myuuid = uuid.uuid4()
+    output_path = f'/data/results/{myuuid}.pdf'
+
     with open(output_path, 'wb') as of:
         writer.write(of)
         of.close()
 
-    with open('/data/results_back/1.pdf', 'wb') as of:
+    with open(f'/data/results_back/{myuuid}.pdf', 'wb') as of:
         writer.write(of)
         of.close()
     return [output_path]
 
 
 async def clear_directory(input_files, zip_files):
+    # List < String > list = inout_files.name
+
     for file in input_files:
+        # if (list.contains(file.name))
         try:
             os.remove(file)
         except Exception as e:
@@ -110,7 +115,8 @@ async def handle_zip(message: Message):
             file_id = message.document.file_id
             file = await bot.get_file(file_id)
             file_path = file.file_path
-            file_name = "/data/waybill.zip"
+            zip_uuid = uuid.uuid4()
+            file_name = f"/data/{zip_uuid}.zip"
 
             # Download the zip file:
             await bot.download_file(file_path, file_name)
