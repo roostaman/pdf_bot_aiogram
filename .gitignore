@@ -171,3 +171,5 @@ cython_debug/
 # my folder
 /data/results_back/
 files/results_back/
+
+amvera.yml

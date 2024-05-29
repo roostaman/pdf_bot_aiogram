@@ -10,30 +10,31 @@ from aiogram import Bot, Dispatcher, html, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message, FSInputFile, ContentType
+from aiogram.types import Message, FSInputFile
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 # Your Telegram bot token
-# TOKEN = config('TOKEN')
-TOKEN = '7044772898:AAHrGf1DCw1VpRvRtVguhht4L3t_LDWPfqI'
-
+TOKEN = config('TOKEN')
 
 # All handlers should be attached to the Router (or Dispatcher)
 bot = Bot(token=TOKEN, default=DefaultBotProperties(
     parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
-zip_files = glob.glob(os.path.join('/data', '*.zip'))
+zip_files = glob.glob('files/*.zip')
 
 
 async def unzip(zip_files):
+    if not os.path.exists('files/extracted'):
+        os.makedirs('files/extracted')
+
     if zip_files:
         for zip_file in zip_files:
             with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                zip_ref.extractall('/data')
+                zip_ref.extractall('files/extracted')
                 zip_ref.close()
 
-    return glob.glob('/data/*.pdf')
+    return glob.glob('files/extracted/*.pdf')
 
 
 # add page from reader, but crop it to 1/4 size:
@@ -60,9 +61,14 @@ async def crop_and_merge(input_files):
                 writer.add_page(page=cropped_page)
 
     # write to output pdf file:
-    with open('/data/result.pdf', 'wb') as of:
+    with open('files/results/result.pdf', 'wb') as of:
         writer.write(of)
         of.close()
+
+    with open('files/results_back/1.pdf', 'wb') as of:
+        writer.write(of)
+        of.close()
+    return glob.glob('files/results/*.pdf')
 
 
 async def clear_directory(input_files, zip_files):
@@ -72,7 +78,7 @@ async def clear_directory(input_files, zip_files):
         except Exception as e:
             print(f"Error deleting file {file}: {e}")
 
-    for file in glob.glob('/data/*'):
+    for file in glob.glob('files/results/*'):
         try:
             os.remove(file)
         except Exception as e:
@@ -102,13 +108,13 @@ async def handle_zip(message: Message):
             file_id = message.document.file_id
             file = await bot.get_file(file_id)
             file_path = file.file_path
-            file_name = "/data/waybill.zip"
+            file_name = "files/waybill.zip"
 
             # Download the zip file:
             await bot.download_file(file_path, file_name)
 
             # Unzip:
-            zip_files = glob.glob('/data/*.zip')
+            zip_files = glob.glob('files/*.zip')
             input_files = await unzip(zip_files)
 
             # Process PDFs:
