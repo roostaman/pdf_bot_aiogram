@@ -14,7 +14,8 @@ from aiogram.types import Message, FSInputFile
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 # Your Telegram bot token
-TOKEN = config('TOKEN')
+# TOKEN = config('TOKEN')
+TOKEN = '7044772898:AAHrGf1DCw1VpRvRtVguhht4L3t_LDWPfqI'
 
 # All handlers should be attached to the Router (or Dispatcher)
 bot = Bot(token=TOKEN, default=DefaultBotProperties(
@@ -61,14 +62,15 @@ async def crop_and_merge(input_files):
                 writer.add_page(page=cropped_page)
 
     # write to output pdf file:
-    with open('/data/results/result.pdf', 'wb') as of:
+    output_path = '/data/results/result.pdf'
+    with open(output_path, 'wb') as of:
         writer.write(of)
         of.close()
 
     with open('/data/results_back/1.pdf', 'wb') as of:
         writer.write(of)
         of.close()
-    return glob.glob('/data/results/*.pdf')
+    return [output_path]
 
 
 async def clear_directory(input_files, zip_files):
