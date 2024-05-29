@@ -14,7 +14,9 @@ from aiogram.types import Message, FSInputFile, ContentType
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 # Your Telegram bot token
-TOKEN = config('TOKEN')
+# TOKEN = config('TOKEN')
+TOKEN = '7044772898:AAHrGf1DCw1VpRvRtVguhht4L3t_LDWPfqI'
+
 
 # All handlers should be attached to the Router (or Dispatcher)
 bot = Bot(token=TOKEN, default=DefaultBotProperties(
