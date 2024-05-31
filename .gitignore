@@ -173,3 +173,4 @@ cython_debug/
 files/results_back/
 
 amvera.yml
+for_local_use.py

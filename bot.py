@@ -5,6 +5,7 @@ import sys
 import zipfile
 import glob
 import uuid
+import shutil
 from decouple import config
 from PyPDF2 import PdfReader, PdfWriter
 from aiogram import Bot, Dispatcher, html, F
@@ -12,7 +13,6 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message, FSInputFile
-from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 # Your Telegram bot token
 TOKEN = config('TOKEN')
@@ -75,19 +75,25 @@ async def crop_and_merge(input_files):
     return [output_path]
 
 
-async def clear_directory(input_files, zip_files):
-    # List < String > list = inout_files.name
+async def clear_directory(zip_files):
+    # List < String > list = input_files.name
 
-    for file in input_files:
+    for file in glob.glob('/data/extracted/*'):
         # if (list.contains(file.name))
         try:
-            os.remove(file)
+            if os.path.isdir(file):
+                shutil.rmtree(file)
+            else:
+                os.remove(file)
         except Exception as e:
             print(f"Error deleting file {file}: {e}")
 
     for file in glob.glob('/data/results/*'):
         try:
-            os.remove(file)
+            if os.path.isdir(file):
+                shutil.rmtree(file)
+            else:
+                os.remove(file)
         except Exception as e:
             print(f"Error deleting file {file}: {e}")
 
@@ -136,7 +142,7 @@ async def handle_zip(message: Message):
                 print(f'Error occured: {e}')
                 await message.reply('Ошибка при обработке документа:( ')
 
-            await clear_directory(input_files, zip_files)
+            await clear_directory(zip_files)
 
         else:
             await message.reply(f'Normalno obrashaisya so mnoi. Zhdu "arhivnyi" dokument)\nI tolko po odnomu. Tolpoi ne lez.')
