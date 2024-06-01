@@ -25,17 +25,17 @@ dp = Dispatcher()
 zip_files = glob.glob('/data/*.zip')
 
 
-async def unzip(zip_files):
+async def unzip(zip_files, folderName):
     if not os.path.exists('/data/extracted'):
         os.makedirs('/data/extracted')
 
     if zip_files:
         for zip_file in zip_files:
             with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                zip_ref.extractall('/data/extracted')
+                zip_ref.extractall(f'/data/extracted/{folderName}')
                 zip_ref.close()
 
-    return glob.glob('/data/extracted/*.pdf')
+    return glob.glob(f'/data/extracted/{folderName}/*.pdf')
 
 
 # add page from reader, but crop it to 1/4 size:
@@ -49,7 +49,7 @@ def crop_page(page_to_crop):
 
 
 # crop and merge pdfs:
-async def crop_and_merge(input_files):
+async def crop_and_merge(input_files, folderName):
     writer = PdfWriter()
 
     for file in input_files:
@@ -62,23 +62,26 @@ async def crop_and_merge(input_files):
                 writer.add_page(page=cropped_page)
 
     # write to output pdf file:
-    myuuid = uuid.uuid4()
-    output_path = f'/data/results/{myuuid}.pdf'
+    if not os.path.exists(f'/data/results/{folderName}'):
+        os.makedirs(f'/data/results/{folderName}')
+
+    if not os.path.exists(f'/data/results_back/{folderName}'):
+        os.makedirs(f'/data/results_back/{folderName}')
+
+    output_path = f'/data/results/{folderName}/result.pdf'
 
     with open(output_path, 'wb') as of:
         writer.write(of)
         of.close()
 
-    with open(f'/data/results_back/{myuuid}.pdf', 'wb') as of:
+    with open(f'/data/results_back/{folderName}/result.pdf', 'wb') as of:
         writer.write(of)
         of.close()
     return [output_path]
 
 
-async def clear_directory(zip_files):
-    # List < String > list = input_files.name
-
-    for file in glob.glob('/data/extracted/*'):
+async def clear_directory(zip_files, folderName):
+    for file in glob.glob(f'/data/extracted/{folderName}'):
         # if (list.contains(file.name))
         try:
             if os.path.isdir(file):
@@ -88,7 +91,7 @@ async def clear_directory(zip_files):
         except Exception as e:
             print(f"Error deleting file {file}: {e}")
 
-    for file in glob.glob('/data/results/*'):
+    for file in glob.glob(f'/data/results/{folderName}'):
         try:
             if os.path.isdir(file):
                 shutil.rmtree(file)
@@ -121,6 +124,7 @@ async def handle_zip(message: Message):
             file_id = message.document.file_id
             file = await bot.get_file(file_id)
             file_path = file.file_path
+
             zip_uuid = uuid.uuid4()
             file_name = f"/data/{zip_uuid}.zip"
 
@@ -129,10 +133,14 @@ async def handle_zip(message: Message):
 
             # Unzip:
             zip_files = glob.glob('/data/*.zip')
-            input_files = await unzip(zip_files)
+
+            folderId = uuid.uuid4()
+            folderName = f'zip_files_{folderId}'
+
+            input_files = await unzip(zip_files, folderName)
 
             # Process PDFs:
-            output_file = await crop_and_merge(input_files)
+            output_file = await crop_and_merge(input_files, folderName)
 
             # Send the merged PDF:
             try:
@@ -142,7 +150,7 @@ async def handle_zip(message: Message):
                 print(f'Error occured: {e}')
                 await message.reply('Ошибка при обработке документа:( ')
 
-            await clear_directory(zip_files)
+            await clear_directory(zip_files, folderName)
 
         else:
             await message.reply(f'Normalno obrashaisya so mnoi. Zhdu "arhivnyi" dokument)\nI tolko po odnomu. Tolpoi ne lez.')
